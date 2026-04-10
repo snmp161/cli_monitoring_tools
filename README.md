@@ -163,7 +163,16 @@ pip install -r uptimekuma_tools/requirements.txt
 pip install -r domain_tools/requirements.txt
 ```
 
-Переменные окружения задаются через `.env` файлы в директориях утилит или через `export`.
+Каждая директория содержит `.env.example` — шаблон с необходимыми переменными. Скопируйте его в `.env` и заполните своими значениями:
+
+```bash
+cp sentry_api_tools/.env.example sentry_api_tools/.env
+cp zabbix_api_tools/.env.example zabbix_api_tools/.env
+cp uptimekuma_tools/.env.example uptimekuma_tools/.env
+cp domain_tools/.env.example domain_tools/.env
+```
+
+Файлы `.env` добавлены в `.gitignore` и не перезаписываются при `git pull`.
 
 ## Лицензия
 
