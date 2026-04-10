@@ -51,7 +51,10 @@ def zabbix_api(session, method, params):
         raise RuntimeError(f"Zabbix request timed out: {method}")
     except requests.exceptions.HTTPError:
         raise RuntimeError(f"Zabbix HTTP {response.status_code}: {response.text[:200]}")
-    result = response.json()
+    try:
+        result = response.json()
+    except ValueError:
+        raise RuntimeError(f"Invalid JSON response from Zabbix: {method}")
     if "error" in result:
         raise RuntimeError(f"API error: {result['error']}")
     return result["result"]

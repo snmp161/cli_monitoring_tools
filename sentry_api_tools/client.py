@@ -43,8 +43,12 @@ class SentryClient:
             return resp.json()
         except requests.exceptions.ConnectionError:
             raise RuntimeError(f"Cannot connect to {url}")
+        except requests.exceptions.Timeout:
+            raise RuntimeError(f"Request timed out: {url}")
         except requests.exceptions.HTTPError:
             raise RuntimeError(f"HTTP {resp.status_code}: {resp.text}")
+        except ValueError:
+            raise RuntimeError(f"Invalid JSON response from {url}")
 
     def put(self, path, data):
         url = f"{self.base_url}{path}"
@@ -54,5 +58,9 @@ class SentryClient:
             return resp.json()
         except requests.exceptions.ConnectionError:
             raise RuntimeError(f"Cannot connect to {url}")
+        except requests.exceptions.Timeout:
+            raise RuntimeError(f"Request timed out: {url}")
         except requests.exceptions.HTTPError:
             raise RuntimeError(f"HTTP {resp.status_code}: {resp.text}")
+        except ValueError:
+            raise RuntimeError(f"Invalid JSON response from {url}")

@@ -116,7 +116,11 @@ def query_domain(session, domain):
         result["error"] = str(e)
         return result
 
-    data = resp.json()
+    try:
+        data = resp.json()
+    except ValueError:
+        result["error"] = "invalid JSON response from GoDaddy API"
+        return result
 
     # Expiration date
     raw_exp = data.get("expires")

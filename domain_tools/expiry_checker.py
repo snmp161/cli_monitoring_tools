@@ -35,7 +35,10 @@ def load_rdap_bootstrap(session):
     if RDAP_BOOTSTRAP_CACHE.exists():
         age = datetime.now().timestamp() - RDAP_BOOTSTRAP_CACHE.stat().st_mtime
         if age < RDAP_BOOTSTRAP_TTL:
-            return json.loads(RDAP_BOOTSTRAP_CACHE.read_text())
+            try:
+                return json.loads(RDAP_BOOTSTRAP_CACHE.read_text())
+            except (ValueError, OSError):
+                pass  # corrupted or unreadable cache, re-download
 
     resp = session.get(RDAP_BOOTSTRAP_URL, timeout=10)
     resp.raise_for_status()
