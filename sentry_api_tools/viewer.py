@@ -4,7 +4,8 @@ import argparse
 import sys
 from datetime import datetime, timedelta, timezone
 
-from client import SentryClient, SENTRY_URL, SENTRY_TOKEN
+import client
+from client import SentryClient
 
 
 def fmt_date(iso_str):
@@ -227,6 +228,8 @@ Environment variables:
         """
     )
 
+    parser.add_argument("--env", metavar="FILE", help="Path to .env file (default: .env)")
+
     sub = parser.add_subparsers(dest="command", required=True)
 
     sub.add_parser("projects", help="List all projects")
@@ -261,19 +264,20 @@ Environment variables:
         print("Error: --project is required.")
         sys.exit(1)
 
-    client = SentryClient(SENTRY_URL, SENTRY_TOKEN)
+    client.init(args.env)
+    sentry = SentryClient(client.SENTRY_URL, client.SENTRY_TOKEN)
     commands = {
         "projects": cmd_projects,
         "issues": cmd_issues,
         "issue": cmd_issue,
     }
     try:
-        commands[args.command](client, args)
+        commands[args.command](sentry, args)
     except RuntimeError as e:
         print(f"Error: {e}")
         sys.exit(1)
     finally:
-        client.session.close()
+        sentry.session.close()
 
 
 if __name__ == "__main__":

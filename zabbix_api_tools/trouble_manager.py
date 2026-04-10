@@ -4,6 +4,7 @@ import argparse
 import sys
 from datetime import datetime, timedelta
 
+import client
 from client import zabbix_api, make_session
 
 SEVERITY_MAP = {
@@ -279,6 +280,7 @@ Environment variables:
         """
     )
 
+    parser.add_argument("--env", metavar="FILE", help="Path to .env file (default: .env)")
     parser.add_argument("--maintenance", nargs="+",
                         metavar="ACTION",
                         help="Maintenance action: create, delete, list")
@@ -316,6 +318,7 @@ Environment variables:
     args.suppress = args.problem and "suppress" in args.problem
     args.unsuppress = args.problem and "unsuppress" in args.problem
 
+    client.init(args.env)
     session = make_session()
 
     try:

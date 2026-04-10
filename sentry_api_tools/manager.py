@@ -3,7 +3,8 @@
 import argparse
 import sys
 
-from client import SentryClient, SENTRY_URL, SENTRY_TOKEN
+import client
+from client import SentryClient
 
 
 def fmt_assignee(assignee):
@@ -112,6 +113,8 @@ Environment variables:
         """
     )
 
+    parser.add_argument("--env", metavar="FILE", help="Path to .env file (default: .env)")
+
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_resolve = sub.add_parser("resolve", help="Resolve an issue")
@@ -154,19 +157,20 @@ Environment variables:
             print("Error: --user-window requires --user-count.")
             sys.exit(1)
 
-    client = SentryClient(SENTRY_URL, SENTRY_TOKEN)
+    client.init(args.env)
+    sentry = SentryClient(client.SENTRY_URL, client.SENTRY_TOKEN)
     commands = {
         "resolve": cmd_resolve,
         "ignore": cmd_ignore,
         "assign": cmd_assign,
     }
     try:
-        commands[args.command](client, args)
+        commands[args.command](sentry, args)
     except RuntimeError as e:
         print(f"Error: {e}")
         sys.exit(1)
     finally:
-        client.session.close()
+        sentry.session.close()
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@ import argparse
 import sys
 from datetime import datetime
 
+import client
 from client import pbs_api, make_session
 
 
@@ -300,6 +301,7 @@ Environment variables:
         """
     )
 
+    parser.add_argument("--env", metavar="FILE", help="Path to .env file (default: .env)")
     parser.add_argument("--datastores", action="store_true",
                         help="List all datastores with usage")
     parser.add_argument("--backups", action="store_true",
@@ -347,6 +349,7 @@ Environment variables:
         print("Error: --not-ok is only used with --tasks.")
         sys.exit(1)
 
+    client.init(args.env)
     session = make_session()
 
     try:

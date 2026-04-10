@@ -12,14 +12,18 @@ from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-load_dotenv()
+ZABBIX_URL = ""
+ZABBIX_TOKEN = ""
 
-ZABBIX_URL = os.environ.get("ZABBIX_URL", "")
-ZABBIX_TOKEN = os.environ.get("ZABBIX_TOKEN", "")
 
-if not ZABBIX_URL or not ZABBIX_TOKEN:
-    print("Error: ZABBIX_URL and ZABBIX_TOKEN must be set in .env or environment.")
-    sys.exit(1)
+def init(env_file=None):
+    global ZABBIX_URL, ZABBIX_TOKEN
+    load_dotenv(env_file)
+    ZABBIX_URL = os.environ.get("ZABBIX_URL", "")
+    ZABBIX_TOKEN = os.environ.get("ZABBIX_TOKEN", "")
+    if not ZABBIX_URL or not ZABBIX_TOKEN:
+        print("Error: ZABBIX_URL and ZABBIX_TOKEN must be set in .env or environment.")
+        sys.exit(1)
 
 
 def make_session():

@@ -5,6 +5,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+import client
 from client import zabbix_api, make_session
 
 ACK_ACTION_MAP = {
@@ -264,6 +265,7 @@ Environment variables:
   export ZABBIX_TOKEN="your_token_here"
         """
     )
+    parser.add_argument("--env", metavar="FILE", help="Path to .env file (default: .env)")
     parser.add_argument("--current", action="store_true", help="Show active problems")
     parser.add_argument("--duty-shift", action="store_true", help="Show problems for last 12 hours")
     parser.add_argument("--duty-day", action="store_true", help="Show problems for last 24 hours")
@@ -289,6 +291,7 @@ Environment variables:
         print("Error: --hosts and --problems are mutually exclusive.")
         sys.exit(1)
 
+    client.init(args.env)
     session = make_session()
 
     try:

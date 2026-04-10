@@ -8,11 +8,17 @@ from datetime import datetime
 from dotenv import load_dotenv
 from uptime_kuma_api import UptimeKumaApi, MonitorStatus
 
-load_dotenv()
+UPTIMEKUMA_URL = ""
+UPTIMEKUMA_USERNAME = ""
+UPTIMEKUMA_PASSWORD = ""
 
-UPTIMEKUMA_URL = os.environ.get("UPTIMEKUMA_URL", "http://localhost:3001")
-UPTIMEKUMA_USERNAME = os.environ.get("UPTIMEKUMA_USERNAME", "")
-UPTIMEKUMA_PASSWORD = os.environ.get("UPTIMEKUMA_PASSWORD", "")
+
+def init(env_file=None):
+    global UPTIMEKUMA_URL, UPTIMEKUMA_USERNAME, UPTIMEKUMA_PASSWORD
+    load_dotenv(env_file)
+    UPTIMEKUMA_URL = os.environ.get("UPTIMEKUMA_URL", "http://localhost:3001")
+    UPTIMEKUMA_USERNAME = os.environ.get("UPTIMEKUMA_USERNAME", "")
+    UPTIMEKUMA_PASSWORD = os.environ.get("UPTIMEKUMA_PASSWORD", "")
 
 STATUS_MAP = {
     MonitorStatus.DOWN: "DOWN",
@@ -279,6 +285,7 @@ Environment variables:
   UPTIMEKUMA_PASSWORD=your_password_here
         """
     )
+    parser.add_argument("--env", metavar="FILE", help="Path to .env file (default: .env)")
     parser.add_argument("--problems", action="store_true",
                         help="Show DOWN monitors")
     parser.add_argument("--history", action="store_true",
@@ -314,6 +321,7 @@ Environment variables:
         print("Error: --id and --name are only used with --history.")
         sys.exit(1)
 
+    init(args.env)
     api = None
     try:
         api = connect_api()

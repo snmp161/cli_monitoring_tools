@@ -5,6 +5,7 @@ import sys
 from collections import defaultdict
 from datetime import datetime, timedelta
 
+import client
 from client import zabbix_api, make_session
 
 METRICS = {
@@ -267,6 +268,7 @@ Environment variables:
   export ZABBIX_TOKEN="your_token_here"
         """
     )
+    parser.add_argument("--env", metavar="FILE", help="Path to .env file (default: .env)")
     parser.add_argument("--mode", choices=["week", "month"], default="week",
                         help="Comparison period: week or month (default: week)")
     parser.add_argument("--count", type=int, default=4,
@@ -288,6 +290,7 @@ Environment variables:
         print("Error: --count must be at least 2.")
         sys.exit(1)
 
+    client.init(args.env)
     session = make_session()
 
     try:

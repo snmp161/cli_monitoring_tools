@@ -53,8 +53,6 @@ from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-load_dotenv()
-
 GODADDY_API_BASE = "https://api.godaddy.com"
 
 PARKED_STATUSES = {
@@ -271,6 +269,7 @@ Parking detection:
                       OR all nameservers match ns\\d+.domaincontrol.com
         """
     )
+    parser.add_argument("--env", metavar="FILE", help="Path to .env file (default: .env)")
     parser.add_argument(
         "domains", nargs="+",
         help="Domain names or path to a file with one domain per line"
@@ -286,6 +285,7 @@ Parking detection:
 
     args = parser.parse_args()
 
+    load_dotenv(args.env)
     api_key = os.environ.get("GODADDY_API_KEY", "").strip()
     api_secret = os.environ.get("GODADDY_API_SECRET", "").strip()
     if not api_key or not api_secret:

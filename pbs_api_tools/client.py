@@ -15,15 +15,20 @@ from urllib3.util.retry import Retry
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-load_dotenv()
+PBS_URL = ""
+PBS_TOKEN_ID = ""
+PBS_TOKEN_SECRET = ""
 
-PBS_URL = os.environ.get("PBS_URL", "")
-PBS_TOKEN_ID = os.environ.get("PBS_TOKEN_ID", "")
-PBS_TOKEN_SECRET = os.environ.get("PBS_TOKEN_SECRET", "")
 
-if not PBS_URL or not PBS_TOKEN_ID or not PBS_TOKEN_SECRET:
-    print("Error: PBS_URL, PBS_TOKEN_ID and PBS_TOKEN_SECRET must be set in .env or environment.")
-    sys.exit(1)
+def init(env_file=None):
+    global PBS_URL, PBS_TOKEN_ID, PBS_TOKEN_SECRET
+    load_dotenv(env_file)
+    PBS_URL = os.environ.get("PBS_URL", "")
+    PBS_TOKEN_ID = os.environ.get("PBS_TOKEN_ID", "")
+    PBS_TOKEN_SECRET = os.environ.get("PBS_TOKEN_SECRET", "")
+    if not PBS_URL or not PBS_TOKEN_ID or not PBS_TOKEN_SECRET:
+        print("Error: PBS_URL, PBS_TOKEN_ID and PBS_TOKEN_SECRET must be set in .env or environment.")
+        sys.exit(1)
 
 
 def make_session():

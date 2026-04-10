@@ -12,14 +12,18 @@ from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-load_dotenv()
+SENTRY_URL = ""
+SENTRY_TOKEN = ""
 
-SENTRY_URL = os.environ.get("SENTRY_URL", "")
-SENTRY_TOKEN = os.environ.get("SENTRY_TOKEN", "")
 
-if not SENTRY_URL or not SENTRY_TOKEN:
-    print("Error: SENTRY_URL and SENTRY_TOKEN must be set in .env or environment.")
-    sys.exit(1)
+def init(env_file=None):
+    global SENTRY_URL, SENTRY_TOKEN
+    load_dotenv(env_file)
+    SENTRY_URL = os.environ.get("SENTRY_URL", "")
+    SENTRY_TOKEN = os.environ.get("SENTRY_TOKEN", "")
+    if not SENTRY_URL or not SENTRY_TOKEN:
+        print("Error: SENTRY_URL and SENTRY_TOKEN must be set in .env or environment.")
+        sys.exit(1)
 
 
 class SentryClient:
