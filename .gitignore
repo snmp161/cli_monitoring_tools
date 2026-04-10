@@ -1,2 +1,4 @@
 .env
 **/.env
+domain_tools/domains.txt
+domain_tools/godaddy_domains.txt
