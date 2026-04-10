@@ -10,6 +10,7 @@
 ├── sentry_api_tools/      # Работа с Sentry
 ├── zabbix_api_tools/      # Работа с Zabbix
 ├── uptimekuma_tools/      # Работа с Uptime Kuma
+├── pbs_api_tools/         # Работа с Proxmox Backup Server
 └── domain_tools/          # Проверка сроков истечения доменов
 ```
 
@@ -124,6 +125,25 @@ UPTIMEKUMA_USERNAME=admin
 UPTIMEKUMA_PASSWORD=your_password_here
 ```
 
+## PBS API Tools
+
+### viewer.py
+
+Просмотр статуса Proxmox Backup Server, хранилищ и backup-групп.
+
+```bash
+python viewer.py --datastore list                        # список всех хранилищ
+python viewer.py --datastore info --name storage1        # детали хранилища с backup-группами
+python viewer.py --server                                # статус сервера (CPU, RAM, uptime)
+```
+
+**Переменные окружения:**
+```
+PBS_URL=https://pbs.example.com:8007
+PBS_TOKEN_ID=user@realm!tokenname
+PBS_TOKEN_SECRET=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
 ## Domain Tools
 
 Проверка сроков истечения доменов.
@@ -162,6 +182,7 @@ GODADDY_API_SECRET=your_secret
 pip install -r sentry_api_tools/requirements.txt
 pip install -r zabbix_api_tools/requirements.txt
 pip install -r uptimekuma_tools/requirements.txt
+pip install -r pbs_api_tools/requirements.txt
 pip install -r domain_tools/requirements.txt
 ```
 
@@ -171,6 +192,7 @@ pip install -r domain_tools/requirements.txt
 cp sentry_api_tools/.env.example sentry_api_tools/.env
 cp zabbix_api_tools/.env.example zabbix_api_tools/.env
 cp uptimekuma_tools/.env.example uptimekuma_tools/.env
+cp pbs_api_tools/.env.example pbs_api_tools/.env
 cp domain_tools/.env.example domain_tools/.env
 ```
 

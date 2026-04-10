@@ -10,6 +10,7 @@ A collection of CLI utilities for working with monitoring systems and domain man
 ├── sentry_api_tools/      # Sentry integration
 ├── zabbix_api_tools/      # Zabbix integration
 ├── uptimekuma_tools/      # Uptime Kuma integration
+├── pbs_api_tools/         # Proxmox Backup Server integration
 └── domain_tools/          # Domain expiry checking
 ```
 
@@ -124,6 +125,25 @@ UPTIMEKUMA_USERNAME=admin
 UPTIMEKUMA_PASSWORD=your_password_here
 ```
 
+## PBS API Tools
+
+### viewer.py
+
+View Proxmox Backup Server status, datastores and backup groups.
+
+```bash
+python viewer.py --datastore list                        # list all datastores
+python viewer.py --datastore info --name storage1        # datastore details with backup groups
+python viewer.py --server                                # server status (CPU, RAM, uptime)
+```
+
+**Environment variables:**
+```
+PBS_URL=https://pbs.example.com:8007
+PBS_TOKEN_ID=user@realm!tokenname
+PBS_TOKEN_SECRET=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
 ## Domain Tools
 
 Domain expiry checking.
@@ -162,6 +182,7 @@ Each tool has its own `requirements.txt`. Install dependencies:
 pip install -r sentry_api_tools/requirements.txt
 pip install -r zabbix_api_tools/requirements.txt
 pip install -r uptimekuma_tools/requirements.txt
+pip install -r pbs_api_tools/requirements.txt
 pip install -r domain_tools/requirements.txt
 ```
 
@@ -171,6 +192,7 @@ Each directory contains an `.env.example` template. Copy it to `.env` and fill i
 cp sentry_api_tools/.env.example sentry_api_tools/.env
 cp zabbix_api_tools/.env.example zabbix_api_tools/.env
 cp uptimekuma_tools/.env.example uptimekuma_tools/.env
+cp pbs_api_tools/.env.example pbs_api_tools/.env
 cp domain_tools/.env.example domain_tools/.env
 ```
 
