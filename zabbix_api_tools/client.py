@@ -1,4 +1,11 @@
+#!/usr/bin/env python3
+
+if __name__ == "__main__":
+    print("This module is not meant to be run directly. Use problems_viewer.py, trends_viewer.py or trouble_manager.py.")
+    raise SystemExit(1)
+
 import os
+import sys
 
 import requests
 from dotenv import load_dotenv
@@ -12,7 +19,7 @@ ZABBIX_TOKEN = os.environ.get("ZABBIX_TOKEN", "")
 
 if not ZABBIX_URL or not ZABBIX_TOKEN:
     print("Error: ZABBIX_URL and ZABBIX_TOKEN must be set in .env or environment.")
-    raise SystemExit(1)
+    sys.exit(1)
 
 
 def make_session():

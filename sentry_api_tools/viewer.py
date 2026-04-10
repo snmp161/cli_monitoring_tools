@@ -207,8 +207,6 @@ def cmd_issue(client, args):
 
 
 def main():
-    client = SentryClient(SENTRY_URL, SENTRY_TOKEN)
-
     parser = argparse.ArgumentParser(
         description="Sentry API viewer",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -263,6 +261,7 @@ Environment variables:
         print("Error: --project is required.")
         sys.exit(1)
 
+    client = SentryClient(SENTRY_URL, SENTRY_TOKEN)
     commands = {
         "projects": cmd_projects,
         "issues": cmd_issues,

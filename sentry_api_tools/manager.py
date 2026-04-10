@@ -87,8 +87,6 @@ def cmd_assign(client, args):
 
 
 def main():
-    client = SentryClient(SENTRY_URL, SENTRY_TOKEN)
-
     parser = argparse.ArgumentParser(
         description="Sentry API manager",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -156,6 +154,7 @@ Environment variables:
             print("Error: --user-window requires --user-count.")
             sys.exit(1)
 
+    client = SentryClient(SENTRY_URL, SENTRY_TOKEN)
     commands = {
         "resolve": cmd_resolve,
         "ignore": cmd_ignore,

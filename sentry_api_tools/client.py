@@ -1,4 +1,11 @@
+#!/usr/bin/env python3
+
+if __name__ == "__main__":
+    print("This module is not meant to be run directly. Use viewer.py or manager.py.")
+    raise SystemExit(1)
+
 import os
+import sys
 
 import requests
 from dotenv import load_dotenv
@@ -12,7 +19,7 @@ SENTRY_TOKEN = os.environ.get("SENTRY_TOKEN", "")
 
 if not SENTRY_URL or not SENTRY_TOKEN:
     print("Error: SENTRY_URL and SENTRY_TOKEN must be set in .env or environment.")
-    raise SystemExit(1)
+    sys.exit(1)
 
 
 class SentryClient:
