@@ -129,11 +129,16 @@ UPTIMEKUMA_PASSWORD=your_password_here
 
 ### viewer.py
 
-View Proxmox Backup Server status, datastores and backup groups.
+View Proxmox Backup Server status, datastores, backups and tasks.
 
 ```bash
-python viewer.py --datastore list                        # list all datastores
-python viewer.py --datastore info --name storage1        # datastore details with backup groups
+python viewer.py --datastores                            # list all datastores with usage
+python viewer.py --backups                               # backups across all datastores
+python viewer.py --backups --datastore local             # backups for a specific datastore
+python viewer.py --backups --duty-shift                  # stale backups (older than 12h)
+python viewer.py --backups --duty-day                    # stale backups (older than 24h)
+python viewer.py --tasks --duty-shift                    # tasks for last 12 hours
+python viewer.py --tasks --duty-day --not-ok             # failed tasks for last 24 hours
 python viewer.py --server                                # server status (CPU, RAM, uptime)
 ```
 
