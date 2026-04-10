@@ -1,48 +1,50 @@
 # CLI Monitoring Tools
 
-Набор CLI-утилит для работы с системами мониторинга и управления доменами. Все утилиты написаны на Python 3 и работают через API соответствующих сервисов.
+> [Русская версия](README.ru.md)
 
-## Структура
+A collection of CLI utilities for working with monitoring systems and domain management. All utilities are written in Python 3 and interact with their respective services via API.
+
+## Structure
 
 ```
-├── sentry_api_tools/      # Работа с Sentry
-├── zabbix_api_tools/      # Работа с Zabbix
-├── uptimekuma_tools/      # Работа с Uptime Kuma
-└── domain_tools/          # Проверка сроков истечения доменов
+├── sentry_api_tools/      # Sentry integration
+├── zabbix_api_tools/      # Zabbix integration
+├── uptimekuma_tools/      # Uptime Kuma integration
+└── domain_tools/          # Domain expiry checking
 ```
 
 ## Sentry API Tools
 
-Просмотр и управление issues в Sentry через API.
+View and manage Sentry issues via API.
 
 ### viewer.py
 
-Просмотр проектов и issues.
+Browse projects and issues.
 
 ```bash
-python viewer.py projects                                    # список проектов
-python viewer.py issues --current --project myproject        # текущие issues
-python viewer.py issues --duty-shift --project myproject     # issues за последние 12 часов
-python viewer.py issues --duty-day --project myproject       # issues за последние 24 часа
-python viewer.py issue 123456789                             # детали issue
-python viewer.py issue 123456789 --stacktrace                # со стектрейсом
-python viewer.py issue 123456789 --events 25                 # с последними событиями
+python viewer.py projects                                    # list all projects
+python viewer.py issues --current --project myproject        # current issues
+python viewer.py issues --duty-shift --project myproject     # issues from last 12 hours
+python viewer.py issues --duty-day --project myproject       # issues from last 24 hours
+python viewer.py issue 123456789                             # issue details
+python viewer.py issue 123456789 --stacktrace                # with stacktrace
+python viewer.py issue 123456789 --events 25                 # with latest events
 ```
 
 ### manager.py
 
-Управление issues: resolve, ignore (snooze), assign.
+Manage issues: resolve, ignore (snooze), assign.
 
 ```bash
-python manager.py resolve 123456789                          # резолв issue
-python manager.py resolve 123456789 --in-next-release        # резолв в следующем релизе
-python manager.py ignore 123456789 --duration 480            # игнор на 480 минут
-python manager.py ignore 123456789 --count 100               # игнор до 100 повторений
-python manager.py assign 123456789 --to john@example.com     # назначить на пользователя
-python manager.py assign 123456789 --to team:backend         # назначить на команду
+python manager.py resolve 123456789                          # resolve issue
+python manager.py resolve 123456789 --in-next-release        # resolve in next release
+python manager.py ignore 123456789 --duration 480            # ignore for 480 minutes
+python manager.py ignore 123456789 --count 100               # ignore until 100 occurrences
+python manager.py assign 123456789 --to john@example.com     # assign to user
+python manager.py assign 123456789 --to team:backend         # assign to team
 ```
 
-**Переменные окружения:**
+**Environment variables:**
 ```
 SENTRY_URL=https://sentry.example.com/
 SENTRY_TOKEN=your_token_here
@@ -50,44 +52,44 @@ SENTRY_TOKEN=your_token_here
 
 ## Zabbix API Tools
 
-Работа с проблемами, трендами и maintenance-окнами в Zabbix.
+Work with problems, trends and maintenance windows in Zabbix.
 
 ### problems_viewer.py
 
-Просмотр текущих и исторических проблем.
+View current and historical problems.
 
 ```bash
-python problems_viewer.py --current                          # активные проблемы
-python problems_viewer.py --duty-shift                       # за последние 12 часов
-python problems_viewer.py --duty-day                         # за последние 24 часа
-python problems_viewer.py --duty-week                        # за последние 7 дней
-python problems_viewer.py --duty-month                       # за последние 30 дней
-python problems_viewer.py --duty-shift --hosts               # группировка по хостам
-python problems_viewer.py --duty-day --problems              # группировка по проблемам
-python problems_viewer.py --current --history                # с полной историей действий
+python problems_viewer.py --current                          # active problems
+python problems_viewer.py --duty-shift                       # last 12 hours
+python problems_viewer.py --duty-day                         # last 24 hours
+python problems_viewer.py --duty-week                        # last 7 days
+python problems_viewer.py --duty-month                       # last 30 days
+python problems_viewer.py --duty-shift --hosts               # group by host
+python problems_viewer.py --duty-day --problems              # group by problem
+python problems_viewer.py --current --history                # with full action history
 ```
 
 ### trends_viewer.py
 
-Анализ роста нагрузки (CPU, memory, load average) по хостам за несколько периодов. Показывает top-N хостов с наибольшим ростом метрик.
+Analyze load growth (CPU, memory, load average) across hosts over multiple periods. Shows top-N hosts with the highest metric growth.
 
 ```bash
-python trends_viewer.py --mode week --count 4                # понедельное сравнение за 4 недели
-python trends_viewer.py --mode month --count 3 --top 5       # помесячное, top-5 хостов
-python trends_viewer.py --mode week --count 8 --output summary  # сводная таблица
-python trends_viewer.py --mode month --count 6 --group "Linux servers"  # по группе хостов
+python trends_viewer.py --mode week --count 4                # weekly comparison, 4 weeks
+python trends_viewer.py --mode month --count 3 --top 5       # monthly, top 5 hosts
+python trends_viewer.py --mode week --count 8 --output summary  # summary table
+python trends_viewer.py --mode month --count 6 --group "Linux servers"  # by host group
 ```
 
 ### trouble_manager.py
 
-Управление проблемами и maintenance-окнами.
+Manage problems and maintenance windows.
 
 ```bash
-# Проблемы
-python trouble_manager.py --problem ack --event-id 1234               # подтвердить проблему
-python trouble_manager.py --problem close --event-id 1234             # закрыть проблему
-python trouble_manager.py --problem suppress --host web01             # подавить по хосту
-python trouble_manager.py --problem severity --event-id 1234 --severity high  # изменить severity
+# Problems
+python trouble_manager.py --problem ack --event-id 1234               # acknowledge
+python trouble_manager.py --problem close --event-id 1234             # close problem
+python trouble_manager.py --problem suppress --host web01             # suppress by host
+python trouble_manager.py --problem severity --event-id 1234 --severity high  # change severity
 
 # Maintenance
 python trouble_manager.py --maintenance create --name "Deploy" --host web01 web02 --duration 60
@@ -95,7 +97,7 @@ python trouble_manager.py --maintenance list
 python trouble_manager.py --maintenance delete --maintenance-id 12
 ```
 
-**Переменные окружения:**
+**Environment variables:**
 ```
 ZABBIX_URL=https://zabbix.example.com/api_jsonrpc.php
 ZABBIX_TOKEN=your_token_here
@@ -105,17 +107,17 @@ ZABBIX_TOKEN=your_token_here
 
 ### viewer.py
 
-Просмотр статуса мониторов и истории heartbeat-ов в Uptime Kuma.
+View monitor status and heartbeat history in Uptime Kuma.
 
 ```bash
-python viewer.py --problems                                  # текущие DOWN-мониторы
-python viewer.py --problems --duty-shift                     # мониторы с DOWN за 12 часов
-python viewer.py --problems --duty-day                       # мониторы с DOWN за 24 часа
-python viewer.py --history --id 5 --duty-shift               # история монитора по ID
-python viewer.py --history --name "API" --duty-day           # история монитора по имени
+python viewer.py --problems                                  # current DOWN monitors
+python viewer.py --problems --duty-shift                     # monitors with DOWN in last 12h
+python viewer.py --problems --duty-day                       # monitors with DOWN in last 24h
+python viewer.py --history --id 5 --duty-shift               # history for monitor #5
+python viewer.py --history --name "API" --duty-day           # history by monitor name
 ```
 
-**Переменные окружения:**
+**Environment variables:**
 ```
 UPTIMEKUMA_URL=http://uptimekuma.example.com:3001
 UPTIMEKUMA_USERNAME=admin
@@ -124,37 +126,37 @@ UPTIMEKUMA_PASSWORD=your_password_here
 
 ## Domain Tools
 
-Проверка сроков истечения доменов.
+Domain expiry checking.
 
 ### expiry_checker.py
 
-Универсальная проверка через RDAP (с fallback на WHOIS). Не требует API-ключей.
+Universal checker via RDAP (with WHOIS fallback). No API keys required.
 
 ```bash
-python expiry_checker.py domains.txt                         # проверить список доменов
-python expiry_checker.py domains.txt --warn 60               # предупреждать за 60 дней
-python expiry_checker.py domains.txt --delay 2               # задержка между запросами
+python expiry_checker.py domains.txt                         # check domain list
+python expiry_checker.py domains.txt --warn 60               # warn if expiring within 60 days
+python expiry_checker.py domains.txt --delay 2               # delay between requests
 ```
 
 ### godaddy_checker.py
 
-Проверка доменов через GoDaddy API. Дополнительно определяет статус парковки и auto-renewal.
+Check domains via GoDaddy API. Additionally detects parking status and auto-renewal.
 
 ```bash
-python godaddy_checker.py godaddy_domains.txt                # проверить из файла
-python godaddy_checker.py godaddy_domains.txt --warn 60      # порог предупреждения
-python godaddy_checker.py example.com example.org            # проверить конкретные домены
+python godaddy_checker.py godaddy_domains.txt                # check from file
+python godaddy_checker.py godaddy_domains.txt --warn 60      # warning threshold
+python godaddy_checker.py example.com example.org            # check specific domains
 ```
 
-**Переменные окружения:**
+**Environment variables:**
 ```
 GODADDY_API_KEY=your_key
 GODADDY_API_SECRET=your_secret
 ```
 
-## Установка
+## Installation
 
-Каждая утилита имеет свой `requirements.txt`. Установка зависимостей:
+Each tool has its own `requirements.txt`. Install dependencies:
 
 ```bash
 pip install -r sentry_api_tools/requirements.txt
@@ -163,7 +165,7 @@ pip install -r uptimekuma_tools/requirements.txt
 pip install -r domain_tools/requirements.txt
 ```
 
-Каждая директория содержит `.env.example` — шаблон с необходимыми переменными. Скопируйте его в `.env` и заполните своими значениями:
+Each directory contains an `.env.example` template. Copy it to `.env` and fill in your values:
 
 ```bash
 cp sentry_api_tools/.env.example sentry_api_tools/.env
@@ -172,8 +174,8 @@ cp uptimekuma_tools/.env.example uptimekuma_tools/.env
 cp domain_tools/.env.example domain_tools/.env
 ```
 
-Файлы `.env` добавлены в `.gitignore` и не перезаписываются при `git pull`.
+`.env` files are listed in `.gitignore` and will not be overwritten on `git pull`.
 
-## Лицензия
+## License
 
 Apache License 2.0
