@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 
 import requests
 from dotenv import load_dotenv
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 load_dotenv()
 
@@ -50,8 +52,15 @@ def zabbix_api(session, method, params):
         "params": params,
         "id": 1
     }
-    response = session.post(ZABBIX_URL, json=payload)
-    response.raise_for_status()
+    try:
+        response = session.post(ZABBIX_URL, json=payload, timeout=15)
+        response.raise_for_status()
+    except requests.exceptions.ConnectionError:
+        raise RuntimeError(f"Cannot connect to Zabbix at {ZABBIX_URL}")
+    except requests.exceptions.Timeout:
+        raise RuntimeError(f"Zabbix request timed out: {method}")
+    except requests.exceptions.HTTPError:
+        raise RuntimeError(f"Zabbix HTTP {response.status_code}: {response.text[:200]}")
     result = response.json()
     if "error" in result:
         raise RuntimeError(f"API error: {result['error']}")
@@ -315,43 +324,50 @@ Environment variables:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {ZABBIX_TOKEN}"
     })
+    retry = Retry(total=3, backoff_factor=0.5,
+                  status_forcelist=[429, 500, 502, 503, 504])
+    session.mount("https://", HTTPAdapter(max_retries=retry))
+    session.mount("http://", HTTPAdapter(max_retries=retry))
 
-    hosts = get_all_hosts(session)
+    try:
+        hosts = get_all_hosts(session)
 
-    if args.group:
-        groups = zabbix_api(session, "hostgroup.get", {
-            "output": ["groupid", "name"],
-            "filter": {"name": args.group}
-        })
-        if not groups:
-            print(f"Error: no groups found: {', '.join(args.group)}")
+        if args.group:
+            groups = zabbix_api(session, "hostgroup.get", {
+                "output": ["groupid", "name"],
+                "filter": {"name": args.group}
+            })
+            if not groups:
+                print(f"Error: no groups found: {', '.join(args.group)}")
+                sys.exit(1)
+            groupids = [g["groupid"] for g in groups]
+            group_hosts = zabbix_api(session, "host.get", {
+                "output": ["hostid"],
+                "groupids": groupids,
+                "filter": {"status": 0}
+            })
+            allowed = {h["hostid"] for h in group_hosts}
+            hosts = [h for h in hosts if h["hostid"] in allowed]
+
+        if not hosts:
+            print("No hosts found.")
             sys.exit(1)
-        groupids = [g["groupid"] for g in groups]
-        group_hosts = zabbix_api(session, "host.get", {
-            "output": ["hostid"],
-            "groupids": groupids,
-            "filter": {"status": 0}
-        })
-        allowed = {h["hostid"] for h in group_hosts}
-        hosts = [h for h in hosts if h["hostid"] in allowed]
 
-    if not hosts:
-        print("No hosts found.")
-        sys.exit(1)
+        print(f"Analyzing {len(hosts)} host(s), {args.count} {args.mode}(s)...")
 
-    print(f"Analyzing {len(hosts)} host(s), {args.count} {args.mode}(s)...")
+        periods = get_periods(args.mode, args.count)
 
-    periods = get_periods(args.mode, args.count)
+        all_results = {}
+        for metric_key in METRICS:
+            print(f"  Collecting {METRICS[metric_key]['label']}...")
+            all_results[metric_key] = collect_metric(session, hosts, metric_key, periods)
 
-    all_results = {}
-    for metric_key in METRICS:
-        print(f"  Collecting {METRICS[metric_key]['label']}...")
-        all_results[metric_key] = collect_metric(session, hosts, metric_key, periods)
-
-    if args.output == "separate":
-        print_top_separate(all_results, periods, args.mode, args.top)
-    else:
-        print_top_summary(all_results, periods, args.mode, args.top)
+        if args.output == "separate":
+            print_top_separate(all_results, periods, args.mode, args.top)
+        else:
+            print_top_summary(all_results, periods, args.mode, args.top)
+    finally:
+        session.close()
 
 
 if __name__ == "__main__":

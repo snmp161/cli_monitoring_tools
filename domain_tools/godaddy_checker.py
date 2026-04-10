@@ -50,6 +50,8 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 load_dotenv(Path(__file__).parent / ".env")
 
@@ -76,6 +78,10 @@ DEFAULT_DELAY = 0.5
 def make_session(api_key: str, api_secret: str) -> requests.Session:
     s = requests.Session()
     s.headers.update({"Authorization": f"sso-key {api_key}:{api_secret}"})
+    retry = Retry(total=3, backoff_factor=0.5,
+                  status_forcelist=[429, 500, 502, 503, 504])
+    s.mount("https://", HTTPAdapter(max_retries=retry))
+    s.mount("http://", HTTPAdapter(max_retries=retry))
     return s
 
 
@@ -298,24 +304,27 @@ Parking detection:
 
     session = make_session(api_key, api_secret)
 
-    print(f"Checking {len(domains)} domain(s) via GoDaddy API...\n")
+    try:
+        print(f"Checking {len(domains)} domain(s) via GoDaddy API...\n")
 
-    results = []
-    for i, domain in enumerate(domains, 1):
-        print(f"  [{i:>3}/{len(domains)}] {domain}...", end=" ", flush=True)
-        r = query_domain(session, domain)
-        if r["error"]:
-            print(f"ERROR: {r['error']}")
-        else:
-            d = days_left(r["expiration_date"])
-            auto_tag = "auto" if r["renew_auto"] else "manual"
-            parked_tag = "  [PARKED]" if is_parked(r) else ""
-            print(f"{r['expiration_date'].strftime('%Y-%m-%d')}  ({d}d)  [{auto_tag}]{parked_tag}")
-        results.append(r)
-        if i < len(domains):
-            time.sleep(args.delay)
+        results = []
+        for i, domain in enumerate(domains, 1):
+            print(f"  [{i:>3}/{len(domains)}] {domain}...", end=" ", flush=True)
+            r = query_domain(session, domain)
+            if r["error"]:
+                print(f"ERROR: {r['error']}")
+            else:
+                d = days_left(r["expiration_date"])
+                auto_tag = "auto" if r["renew_auto"] else "manual"
+                parked_tag = "  [PARKED]" if is_parked(r) else ""
+                print(f"{r['expiration_date'].strftime('%Y-%m-%d')}  ({d}d)  [{auto_tag}]{parked_tag}")
+            results.append(r)
+            if i < len(domains):
+                time.sleep(args.delay)
 
-    print_results(results, args.warn)
+        print_results(results, args.warn)
+    finally:
+        session.close()
 
 
 if __name__ == "__main__":

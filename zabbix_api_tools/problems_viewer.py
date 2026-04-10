@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 
 import requests
 from dotenv import load_dotenv
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 load_dotenv()
 
@@ -42,8 +44,15 @@ def zabbix_api(session, method, params):
         "params": params,
         "id": 1
     }
-    response = session.post(ZABBIX_URL, json=payload)
-    response.raise_for_status()
+    try:
+        response = session.post(ZABBIX_URL, json=payload, timeout=15)
+        response.raise_for_status()
+    except requests.exceptions.ConnectionError:
+        raise RuntimeError(f"Cannot connect to Zabbix at {ZABBIX_URL}")
+    except requests.exceptions.Timeout:
+        raise RuntimeError(f"Zabbix request timed out: {method}")
+    except requests.exceptions.HTTPError:
+        raise RuntimeError(f"Zabbix HTTP {response.status_code}: {response.text[:200]}")
     result = response.json()
     if "error" in result:
         raise RuntimeError(f"API error: {result['error']}")
@@ -316,28 +325,35 @@ Environment variables:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {ZABBIX_TOKEN}"
     })
+    retry = Retry(total=3, backoff_factor=0.5,
+                  status_forcelist=[429, 500, 502, 503, 504])
+    session.mount("https://", HTTPAdapter(max_retries=retry))
+    session.mount("http://", HTTPAdapter(max_retries=retry))
 
-    now = int(datetime.now().timestamp())
+    try:
+        now = int(datetime.now().timestamp())
 
-    if args.current:
-        problems = get_current(session)
-        print_problems(problems, "Current problems", now, args.hosts, args.problems, args.history)
+        if args.current:
+            problems = get_current(session)
+            print_problems(problems, "Current problems", now, args.hosts, args.problems, args.history)
 
-    if args.duty_shift:
-        problems = get_historical(session, hours=12)
-        print_problems(problems, "Problems — last 12 hours", now, args.hosts, args.problems, args.history)
+        if args.duty_shift:
+            problems = get_historical(session, hours=12)
+            print_problems(problems, "Problems — last 12 hours", now, args.hosts, args.problems, args.history)
 
-    if args.duty_day:
-        problems = get_historical(session, hours=24)
-        print_problems(problems, "Problems — last 24 hours", now, args.hosts, args.problems, args.history)
+        if args.duty_day:
+            problems = get_historical(session, hours=24)
+            print_problems(problems, "Problems — last 24 hours", now, args.hosts, args.problems, args.history)
 
-    if args.duty_week:
-        problems = get_historical(session, hours=24*7)
-        print_problems(problems, "Problems — last 7 days", now, args.hosts, args.problems, args.history)
+        if args.duty_week:
+            problems = get_historical(session, hours=24*7)
+            print_problems(problems, "Problems — last 7 days", now, args.hosts, args.problems, args.history)
 
-    if args.duty_month:
-        problems = get_historical(session, hours=24*30)
-        print_problems(problems, "Problems — last 30 days", now, args.hosts, args.problems, args.history)
+        if args.duty_month:
+            problems = get_historical(session, hours=24*30)
+            print_problems(problems, "Problems — last 30 days", now, args.hosts, args.problems, args.history)
+    finally:
+        session.close()
 
 
 if __name__ == "__main__":

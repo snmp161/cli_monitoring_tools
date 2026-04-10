@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 
 import requests
 from dotenv import load_dotenv
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 load_dotenv()
 
@@ -30,8 +32,15 @@ def zabbix_api(session, method, params):
         "params": params,
         "id": 1
     }
-    response = session.post(ZABBIX_URL, json=payload)
-    response.raise_for_status()
+    try:
+        response = session.post(ZABBIX_URL, json=payload, timeout=15)
+        response.raise_for_status()
+    except requests.exceptions.ConnectionError:
+        raise RuntimeError(f"Cannot connect to Zabbix at {ZABBIX_URL}")
+    except requests.exceptions.Timeout:
+        raise RuntimeError(f"Zabbix request timed out: {method}")
+    except requests.exceptions.HTTPError:
+        raise RuntimeError(f"Zabbix HTTP {response.status_code}: {response.text[:200]}")
     result = response.json()
     if "error" in result:
         raise RuntimeError(f"API error: {result['error']}")
@@ -343,27 +352,34 @@ Environment variables:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {ZABBIX_TOKEN}"
     })
+    retry = Retry(total=3, backoff_factor=0.5,
+                  status_forcelist=[429, 500, 502, 503, 504])
+    session.mount("https://", HTTPAdapter(max_retries=retry))
+    session.mount("http://", HTTPAdapter(max_retries=retry))
 
-    if args.maintenance:
-        action = args.maintenance[0].lower()
-        if action == "create":
-            cmd_maintenance_create(session, args)
-        elif action == "delete":
-            cmd_maintenance_delete(session, args)
-        elif action == "list":
-            cmd_maintenance_list(session, args)
-        else:
-            print(f"Error: unknown maintenance action '{action}'. Use: create, delete, list.")
-            sys.exit(1)
+    try:
+        if args.maintenance:
+            action = args.maintenance[0].lower()
+            if action == "create":
+                cmd_maintenance_create(session, args)
+            elif action == "delete":
+                cmd_maintenance_delete(session, args)
+            elif action == "list":
+                cmd_maintenance_list(session, args)
+            else:
+                print(f"Error: unknown maintenance action '{action}'. Use: create, delete, list.")
+                sys.exit(1)
 
-    if args.problem:
-        valid_actions = {"ack", "close", "suppress", "unsuppress", "severity", "message"}
-        unknown = set(args.problem) - valid_actions
-        if unknown:
-            print(f"Error: unknown problem action(s): {', '.join(unknown)}. "
-                  f"Valid: {', '.join(sorted(valid_actions))}")
-            sys.exit(1)
-        cmd_problem(session, args)
+        if args.problem:
+            valid_actions = {"ack", "close", "suppress", "unsuppress", "severity", "message"}
+            unknown = set(args.problem) - valid_actions
+            if unknown:
+                print(f"Error: unknown problem action(s): {', '.join(unknown)}. "
+                      f"Valid: {', '.join(sorted(valid_actions))}")
+                sys.exit(1)
+            cmd_problem(session, args)
+    finally:
+        session.close()
 
 
 if __name__ == "__main__":

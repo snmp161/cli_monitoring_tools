@@ -9,6 +9,8 @@ from pathlib import Path
 
 import requests
 import whoisdomain as whois
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 RDAP_BOOTSTRAP_URL = "https://data.iana.org/rdap/dns.json"
 RDAP_BOOTSTRAP_CACHE = Path(__file__).parent / ".rdap_bootstrap.json"
@@ -18,15 +20,24 @@ DEFAULT_WARN_DAYS = 30
 DEFAULT_DELAY = 1.0  # seconds between requests
 
 
+def make_session():
+    s = requests.Session()
+    retry = Retry(total=3, backoff_factor=0.5,
+                  status_forcelist=[429, 500, 502, 503, 504])
+    s.mount("https://", HTTPAdapter(max_retries=retry))
+    s.mount("http://", HTTPAdapter(max_retries=retry))
+    return s
+
+
 # ─── RDAP bootstrap ───────────────────────────────────────────────────────────
 
-def load_rdap_bootstrap():
+def load_rdap_bootstrap(session):
     if RDAP_BOOTSTRAP_CACHE.exists():
         age = datetime.now().timestamp() - RDAP_BOOTSTRAP_CACHE.stat().st_mtime
         if age < RDAP_BOOTSTRAP_TTL:
             return json.loads(RDAP_BOOTSTRAP_CACHE.read_text())
 
-    resp = requests.get(RDAP_BOOTSTRAP_URL, timeout=10)
+    resp = session.get(RDAP_BOOTSTRAP_URL, timeout=10)
     resp.raise_for_status()
     data = resp.json()
     RDAP_BOOTSTRAP_CACHE.write_text(json.dumps(data))
@@ -43,9 +54,9 @@ def get_rdap_server(bootstrap, domain):
 
 # ─── Queries ──────────────────────────────────────────────────────────────────
 
-def query_rdap(server, domain):
+def query_rdap(session, server, domain):
     url = f"{server}/domain/{domain}"
-    resp = requests.get(url, timeout=10, headers={"Accept": "application/rdap+json"})
+    resp = session.get(url, timeout=10, headers={"Accept": "application/rdap+json"})
     resp.raise_for_status()
     for event in resp.json().get("events", []):
         if event.get("eventAction") == "expiration":
@@ -66,18 +77,18 @@ def query_whois(domain):
     return exp
 
 
-def check_domain(bootstrap, domain):
+def check_domain(session, bootstrap, domain):
     result = {"domain": domain, "expiration_date": None, "source": None, "error": None}
 
     server = get_rdap_server(bootstrap, domain)
     if server:
         try:
-            exp = query_rdap(server, domain)
+            exp = query_rdap(session, server, domain)
             if exp:
                 result["expiration_date"] = exp
                 result["source"] = "rdap"
                 return result
-        except Exception:
+        except (requests.RequestException, KeyError, ValueError):
             pass  # fall through to WHOIS
 
     try:
@@ -87,7 +98,7 @@ def check_domain(bootstrap, domain):
             result["source"] = "whois"
         else:
             result["error"] = "no expiration date returned"
-    except Exception as e:
+    except (requests.RequestException, KeyError, ValueError) as e:
         result["error"] = str(e)
 
     return result
@@ -199,29 +210,34 @@ Environment: no env vars required.
         print("Error: no domains found in file.")
         sys.exit(1)
 
-    print(f"Loading RDAP bootstrap...")
+    session = make_session()
+
     try:
-        bootstrap = load_rdap_bootstrap()
-    except Exception as e:
-        print(f"Warning: could not load RDAP bootstrap ({e}), RDAP disabled.")
-        bootstrap = {"services": []}
+        print(f"Loading RDAP bootstrap...")
+        try:
+            bootstrap = load_rdap_bootstrap(session)
+        except requests.RequestException as e:
+            print(f"Warning: could not load RDAP bootstrap ({e}), RDAP disabled.")
+            bootstrap = {"services": []}
 
-    print(f"Checking {len(domains)} domain(s)...\n")
+        print(f"Checking {len(domains)} domain(s)...\n")
 
-    results = []
-    for i, domain in enumerate(domains, 1):
-        print(f"  [{i:>3}/{len(domains)}] {domain}...", end=" ", flush=True)
-        r = check_domain(bootstrap, domain)
-        if r["expiration_date"]:
-            d = days_left(r["expiration_date"])
-            print(f"{r['expiration_date'].strftime('%Y-%m-%d')}  ({d}d)  [{r['source']}]")
-        else:
-            print(f"ERROR: {r['error']}")
-        results.append(r)
-        if i < len(domains):
-            time.sleep(args.delay)
+        results = []
+        for i, domain in enumerate(domains, 1):
+            print(f"  [{i:>3}/{len(domains)}] {domain}...", end=" ", flush=True)
+            r = check_domain(session, bootstrap, domain)
+            if r["expiration_date"]:
+                d = days_left(r["expiration_date"])
+                print(f"{r['expiration_date'].strftime('%Y-%m-%d')}  ({d}d)  [{r['source']}]")
+            else:
+                print(f"ERROR: {r['error']}")
+            results.append(r)
+            if i < len(domains):
+                time.sleep(args.delay)
 
-    print_results(results, args.warn)
+        print_results(results, args.warn)
+    finally:
+        session.close()
 
 
 if __name__ == "__main__":

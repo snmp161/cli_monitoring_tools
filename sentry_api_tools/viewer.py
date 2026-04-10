@@ -7,6 +7,8 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 from dotenv import load_dotenv
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 load_dotenv()
 
@@ -22,6 +24,10 @@ class SentryClient:
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         })
+        retry = Retry(total=3, backoff_factor=0.5,
+                      status_forcelist=[429, 500, 502, 503, 504])
+        self.session.mount("https://", HTTPAdapter(max_retries=retry))
+        self.session.mount("http://", HTTPAdapter(max_retries=retry))
 
     def get(self, path, params=None):
         url = f"{self.base_url}{path}"
@@ -301,6 +307,8 @@ Environment variables:
     except RuntimeError as e:
         print(f"Error: {e}")
         sys.exit(1)
+    finally:
+        client.session.close()
 
 
 if __name__ == "__main__":
