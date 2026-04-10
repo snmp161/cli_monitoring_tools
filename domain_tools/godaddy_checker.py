@@ -53,7 +53,7 @@ from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-load_dotenv(Path(__file__).parent / ".env")
+load_dotenv()
 
 GODADDY_API_BASE = "https://api.godaddy.com"
 
