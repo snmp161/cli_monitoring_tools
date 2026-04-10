@@ -138,7 +138,8 @@ def show_problems(api, hours=None):
         for m in down_monitors:
             try:
                 beats = api.get_monitor_beats(m["id"], 72)
-            except Exception:
+            except Exception as e:
+                print(f"  Warning: cannot get beats for monitor {m['id']}: {e}")
                 beats = []
             print_monitor_problem(m, beats, now)
     else:
@@ -149,7 +150,8 @@ def show_problems(api, hours=None):
         for m in active_monitors:
             try:
                 beats = api.get_monitor_beats(m["id"], hours)
-            except Exception:
+            except Exception as e:
+                print(f"  Warning: cannot get beats for monitor {m['id']}: {e}")
                 continue
             down_beats = [b for b in beats if b.get("status") == MonitorStatus.DOWN]
             if down_beats:

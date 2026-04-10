@@ -121,7 +121,7 @@ def print_results(results, warn_days):
     warn.sort(key=lambda r: r["expiration_date"])
     ok.sort(key=lambda r: r["expiration_date"])
 
-    col = max(len(r["domain"]) for r in results)
+    col = max((len(r["domain"]) for r in results), default=10)
     col = max(col, 10)
 
     def print_row(r, marker=""):

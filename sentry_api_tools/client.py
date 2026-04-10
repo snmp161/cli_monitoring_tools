@@ -7,8 +7,12 @@ from urllib3.util.retry import Retry
 
 load_dotenv()
 
-SENTRY_URL = os.environ.get("SENTRY_URL", "https://sentry.example.com/")
-SENTRY_TOKEN = os.environ.get("SENTRY_TOKEN", "your_api_token_here")
+SENTRY_URL = os.environ.get("SENTRY_URL", "")
+SENTRY_TOKEN = os.environ.get("SENTRY_TOKEN", "")
+
+if not SENTRY_URL or not SENTRY_TOKEN:
+    print("Error: SENTRY_URL and SENTRY_TOKEN must be set in .env or environment.")
+    raise SystemExit(1)
 
 
 class SentryClient:

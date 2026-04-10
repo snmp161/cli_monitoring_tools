@@ -7,8 +7,12 @@ from urllib3.util.retry import Retry
 
 load_dotenv()
 
-ZABBIX_URL = os.environ.get("ZABBIX_URL", "https://zabbix.example.com/api_jsonrpc.php")
-ZABBIX_TOKEN = os.environ.get("ZABBIX_TOKEN", "your_api_token_here")
+ZABBIX_URL = os.environ.get("ZABBIX_URL", "")
+ZABBIX_TOKEN = os.environ.get("ZABBIX_TOKEN", "")
+
+if not ZABBIX_URL or not ZABBIX_TOKEN:
+    print("Error: ZABBIX_URL and ZABBIX_TOKEN must be set in .env or environment.")
+    raise SystemExit(1)
 
 
 def make_session():
