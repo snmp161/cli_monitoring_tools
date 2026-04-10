@@ -75,7 +75,7 @@ DEFAULT_DELAY = 0.5
 
 # ─── GoDaddy API ──────────────────────────────────────────────────────────────
 
-def make_session(api_key: str, api_secret: str) -> requests.Session:
+def make_session(api_key, api_secret):
     s = requests.Session()
     s.headers.update({"Authorization": f"sso-key {api_key}:{api_secret}"})
     retry = Retry(total=3, backoff_factor=0.5,
@@ -85,7 +85,7 @@ def make_session(api_key: str, api_secret: str) -> requests.Session:
     return s
 
 
-def query_domain(session: requests.Session, domain: str) -> dict:
+def query_domain(session, domain):
     """
     Returns a result dict:
       domain, expiration_date, renew_auto, status, nameservers,
@@ -150,15 +150,15 @@ def query_domain(session: requests.Session, domain: str) -> dict:
 
 # ─── Output ───────────────────────────────────────────────────────────────────
 
-def days_left(exp: datetime) -> int:
+def days_left(exp):
     return (exp - datetime.now(timezone.utc)).days
 
 
-def is_parked(r: dict) -> bool:
+def is_parked(r):
     return r["parked_by_status"] or r["parked_by_ns"]
 
 
-def parking_tag(r: dict) -> str:
+def parking_tag(r):
     parts = []
     if r["parked_by_status"]:
         parts.append(f"status={r['status']}")
@@ -168,7 +168,7 @@ def parking_tag(r: dict) -> str:
     return "  [PARKED: " + "; ".join(parts) + "]" if parts else ""
 
 
-def print_results(results: list, warn_days: int) -> None:
+def print_results(results, warn_days):
     now = datetime.now(timezone.utc)
 
     errors = [r for r in results if r["error"]]
@@ -232,7 +232,7 @@ def print_results(results: list, warn_days: int) -> None:
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
-def load_domains(path: str) -> list[str]:
+def load_domains(path):
     lines = Path(path).read_text().splitlines()
     return [
         line.strip().lower()
@@ -241,7 +241,7 @@ def load_domains(path: str) -> list[str]:
     ]
 
 
-def main() -> None:
+def main():
     parser = argparse.ArgumentParser(
         description="GoDaddy domain expiry + parking checker",
         formatter_class=argparse.RawDescriptionHelpFormatter,
